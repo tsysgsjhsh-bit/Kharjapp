@@ -1,0 +1,318 @@
+name: Bootstrap KharjNegar
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Create Android project
+        run: |
+          mkdir -p app/src/main/java/ir/kharjnegar/app
+          mkdir -p app/src/main
+
+          cat > settings.gradle.kts <<'GRADLE'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "KharjNegar"
+          include(":app")
+          GRADLE
+
+          cat > build.gradle.kts <<'GRADLE'
+          plugins {
+              id("com.android.application") version "8.10.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.1.0" apply false
+          }
+          GRADLE
+
+          cat > gradle.properties <<'PROPS'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          kotlin.code.style=official
+          PROPS
+
+          cat > app/build.gradle.kts <<'GRADLE'
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
+          }
+
+          android {
+              namespace = "ir.kharjnegar.app"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "ir.kharjnegar.app"
+                  minSdk = 24
+                  targetSdk = 35
+                  versionCode = 1
+                  versionName = "1.0.0"
+              }
+
+              buildFeatures {
+                  compose = true
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+
+          dependencies {
+              implementation(platform("androidx.compose:compose-bom:2025.06.01"))
+              implementation("androidx.activity:activity-compose:1.10.1")
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.material:material-icons-extended")
+              debugImplementation("androidx.compose.ui:ui-tooling")
+          }
+          GRADLE
+
+          cat > app/src/main/AndroidManifest.xml <<'MANIFEST'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:allowBackup="true"
+                  android:label="خرج‌نگار"
+                  android:supportsRtl="true"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          MANIFEST
+
+          cat > app/src/main/java/ir/kharjnegar/app/MainActivity.kt <<'KOTLIN'
+          package ir.kharjnegar.app
+
+          import android.os.Bundle
+          import androidx.activity.ComponentActivity
+          import androidx.activity.compose.setContent
+          import androidx.compose.foundation.background
+          import androidx.compose.foundation.layout.*
+          import androidx.compose.foundation.shape.RoundedCornerShape
+          import androidx.compose.material3.*
+          import androidx.compose.runtime.Composable
+          import androidx.compose.ui.Alignment
+          import androidx.compose.ui.Modifier
+          import androidx.compose.ui.graphics.Color
+          import androidx.compose.ui.text.font.FontWeight
+          import androidx.compose.ui.unit.dp
+          import androidx.compose.ui.unit.sp
+
+          private val Teal = Color(0xFF087F75)
+          private val Background = Color(0xFFF4F8F7)
+
+          class MainActivity : ComponentActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContent {
+                      MaterialTheme {
+                          HomeScreen()
+                      }
+                  }
+              }
+          }
+
+          @Composable
+          fun HomeScreen() {
+              Surface(
+                  modifier = Modifier.fillMaxSize(),
+                  color = Background
+              ) {
+                  Column(
+                      modifier = Modifier
+                          .fillMaxSize()
+                          .padding(20.dp),
+                      verticalArrangement = Arrangement.spacedBy(18.dp)
+                  ) {
+                      Text(
+                          text = "خرج‌نگار",
+                          fontSize = 28.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = Teal
+                      )
+                      Text(
+                          text = "مدیریت ساده دخل‌وخرج",
+                          fontSize = 15.sp,
+                          color = Color.DarkGray
+                      )
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(24.dp),
+                          colors = CardDefaults.cardColors(containerColor = Teal)
+                      ) {
+                          Column(modifier = Modifier.padding(22.dp)) {
+                              Text("موجودی کل", color = Color.White.copy(alpha = 0.85f))
+                              Spacer(Modifier.height(10.dp))
+                              Text(
+                                  "۰ تومان",
+                                  fontSize = 30.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = Color.White
+                              )
+                              Text(
+                                  "نمای کلی وضعیت مالی شما",
+                                  color = Color.White.copy(alpha = 0.85f)
+                              )
+                          }
+                      }
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.spacedBy(12.dp)
+                      ) {
+                          SummaryCard("درآمد", "۰ تومان", Modifier.weight(1f))
+                          SummaryCard("هزینه", "۰ تومان", Modifier.weight(1f))
+                      }
+                      Spacer(Modifier.height(4.dp))
+                      Text(
+                          "تراکنش‌های اخیر",
+                          fontSize = 19.sp,
+                          fontWeight = FontWeight.Bold
+                      )
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(20.dp),
+                          colors = CardDefaults.cardColors(containerColor = Color.White)
+                      ) {
+                          Box(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .padding(28.dp),
+                              contentAlignment = Alignment.Center
+                          ) {
+                              Text("هنوز تراکنشی ثبت نشده است", color = Color.Gray)
+                          }
+                      }
+                      Spacer(Modifier.weight(1f))
+                      Button(
+                          onClick = {},
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .height(54.dp),
+                          shape = RoundedCornerShape(18.dp),
+                          colors = ButtonDefaults.buttonColors(containerColor = Teal)
+                      ) {
+                          Text("ثبت اولین تراکنش", fontSize = 16.sp)
+                      }
+                  }
+              }
+          }
+
+          @Composable
+          fun SummaryCard(title: String, amount: String, modifier: Modifier = Modifier) {
+              Card(
+                  modifier = modifier,
+                  shape = RoundedCornerShape(20.dp),
+                  colors = CardDefaults.cardColors(containerColor = Color.White)
+              ) {
+                  Column(
+                      modifier = Modifier.padding(16.dp),
+                      verticalArrangement = Arrangement.spacedBy(10.dp)
+                  ) {
+                      Text(title, color = Color.Gray)
+                      Text(
+                          amount,
+                          fontWeight = FontWeight.Bold,
+                          fontSize = 16.sp,
+                          color = Teal
+                      )
+                  }
+              }
+          }
+          KOTLIN
+
+          cat > README.md <<'README'
+          # خرج‌نگار
+          اپلیکیشن اندرویدی مدیریت درآمد و هزینه با رابط فارسی.
+          
+          شناسه برنامه: `ir.kharjnegar.app`
+          نسخه اولیه: `1.0.0`
+          
+          این نسخه فقط اسکلت اولیه رابط کاربری است؛ ذخیره تراکنش‌ها و گزارش‌گیری در مراحل بعد اضافه می‌شود.
+          README
+
+          cat > .github/workflows/build-apk.yml <<'BUILD'
+          name: Build KharjNegar APK
+
+          on:
+            push:
+              branches: [main, master]
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Set up Java
+                  uses: actions/setup-java@v4
+                  with:
+                    distribution: temurin
+                    java-version: '17'
+
+                - name: Set up Gradle
+                  uses: gradle/actions/setup-gradle@v4
+                  with:
+                    gradle-version: '8.13'
+
+                - name: Build debug APK
+                  run: gradle assembleDebug
+
+                - name: Upload APK
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: KharjNegar-debug-APK
+                    path: app/build/outputs/apk/debug/app-debug.apk
+          BUILD
+
+      - name: Commit and push project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Create KharjNegar Android project" || echo "No changes to commit"
+          git push origin HEAD:${GITHUB_REF_NAME}
