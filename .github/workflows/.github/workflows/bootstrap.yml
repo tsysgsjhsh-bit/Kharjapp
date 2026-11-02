@@ -1,0 +1,402 @@
+name: Bootstrap KharjNegar
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create project files
+        run: |
+          mkdir -p .github/workflows
+          mkdir -p app/src/main/java/ir/kharjnegar/app
+
+          cat > settings.gradle.kts <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "KharjNegar"
+          include(":app")
+          EOF
+
+          cat > build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application") version "8.10.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.1.0" apply false
+          }
+          EOF
+
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          kotlin.code.style=official
+          EOF
+
+          cat > app/build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
+          }
+
+          android {
+              namespace = "ir.kharjnegar.app"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "ir.kharjnegar.app"
+                  minSdk = 24
+                  targetSdk = 35
+                  versionCode = 1
+                  versionName = "1.0.0"
+              }
+
+              buildFeatures {
+                  compose = true
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+
+          dependencies {
+              implementation(platform("androidx.compose:compose-bom:2025.05.00"))
+              implementation("androidx.activity:activity-compose:1.10.1")
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-graphics")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.material:material-icons-extended")
+              debugImplementation("androidx.compose.ui:ui-tooling")
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:allowBackup="true"
+                  android:label="خرج‌نگار"
+                  android:supportsRtl="true"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/java/ir/kharjnegar/app/MainActivity.kt <<'EOF'
+          package ir.kharjnegar.app
+
+          import android.os.Bundle
+          import androidx.activity.ComponentActivity
+          import androidx.activity.compose.setContent
+          import androidx.compose.foundation.background
+          import androidx.compose.foundation.layout.*
+          import androidx.compose.foundation.shape.RoundedCornerShape
+          import androidx.compose.material.icons.Icons
+          import androidx.compose.material.icons.filled.Add
+          import androidx.compose.material.icons.filled.Analytics
+          import androidx.compose.material.icons.filled.Home
+          import androidx.compose.material.icons.filled.ReceiptLong
+          import androidx.compose.material.icons.filled.Settings
+          import androidx.compose.material3.*
+          import androidx.compose.runtime.*
+          import androidx.compose.ui.Alignment
+          import androidx.compose.ui.Modifier
+          import androidx.compose.ui.graphics.Brush
+          import androidx.compose.ui.graphics.Color
+          import androidx.compose.ui.text.font.FontWeight
+          import androidx.compose.ui.text.style.TextAlign
+          import androidx.compose.ui.unit.dp
+          import androidx.compose.ui.unit.sp
+
+          private val Teal = Color(0xFF008F83)
+          private val DeepTeal = Color(0xFF075B65)
+          private val Ink = Color(0xFF183447)
+          private val Muted = Color(0xFF728597)
+
+          class MainActivity : ComponentActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContent {
+                      MaterialTheme(
+                          colorScheme = lightColorScheme(primary = Teal, secondary = DeepTeal)
+                      ) {
+                          HomeScreen()
+                      }
+                  }
+              }
+          }
+
+          @Composable
+          private fun HomeScreen() {
+              var selectedTab by remember { mutableIntStateOf(0) }
+
+              Scaffold(
+                  containerColor = Color(0xFFF4F7FB),
+                  bottomBar = {
+                      NavigationBar(containerColor = Color.White) {
+                          NavigationBarItem(
+                              selected = selectedTab == 0,
+                              onClick = { selectedTab = 0 },
+                              icon = { Icon(Icons.Default.Home, null) },
+                              label = { Text("خانه") }
+                          )
+                          NavigationBarItem(
+                              selected = selectedTab == 1,
+                              onClick = { selectedTab = 1 },
+                              icon = { Icon(Icons.Default.ReceiptLong, null) },
+                              label = { Text("تراکنش‌ها") }
+                          )
+                          NavigationBarItem(
+                              selected = selectedTab == 2,
+                              onClick = { selectedTab = 2 },
+                              icon = { Icon(Icons.Default.Analytics, null) },
+                              label = { Text("گزارش‌ها") }
+                          )
+                          NavigationBarItem(
+                              selected = selectedTab == 3,
+                              onClick = { selectedTab = 3 },
+                              icon = { Icon(Icons.Default.Settings, null) },
+                              label = { Text("تنظیمات") }
+                          )
+                      }
+                  }
+              ) { padding ->
+                  Column(
+                      modifier = Modifier
+                          .fillMaxSize()
+                          .padding(padding)
+                          .padding(18.dp),
+                      horizontalAlignment = Alignment.End
+                  ) {
+                      Text(
+                          "خرج‌نگار",
+                          fontSize = 27.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = Ink
+                      )
+                      Text("مدیریت ساده و هوشمند پول", color = Muted)
+                      Spacer(Modifier.height(22.dp))
+
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(26.dp),
+                          colors = CardDefaults.cardColors(containerColor = DeepTeal)
+                      ) {
+                          Column(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .background(
+                                      Brush.linearGradient(
+                                          listOf(Color(0xFF087F8C), Color(0xFF064B62))
+                                      )
+                                  )
+                                  .padding(24.dp),
+                              horizontalAlignment = Alignment.End
+                          ) {
+                              Text("موجودی فعلی", color = Color.White.copy(alpha = 0.8f))
+                              Spacer(Modifier.height(8.dp))
+                              Text(
+                                  "۰ تومان",
+                                  color = Color.White,
+                                  fontSize = 30.sp,
+                                  fontWeight = FontWeight.Bold
+                              )
+                              Text("موجودی پس از ثبت تراکنش‌ها محاسبه می‌شود",
+                                  color = Color.White.copy(alpha = 0.8f),
+                                  fontSize = 11.sp
+                              )
+                          }
+                      }
+
+                      Spacer(Modifier.height(16.dp))
+
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.spacedBy(12.dp)
+                      ) {
+                          SummaryCard(
+                              "درآمد این ماه", "۰ تومان",
+                              Color(0xFFE0F7F2), Color(0xFF07866F),
+                              Modifier.weight(1f)
+                          )
+                          SummaryCard(
+                              "هزینه این ماه", "۰ تومان",
+                              Color(0xFFFFE9EC), Color(0xFFD74459),
+                              Modifier.weight(1f)
+                          )
+                      }
+
+                      Spacer(Modifier.height(18.dp))
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(22.dp),
+                          colors = CardDefaults.cardColors(containerColor = Color.White)
+                      ) {
+                          Column(
+                              modifier = Modifier.padding(18.dp),
+                              horizontalAlignment = Alignment.End
+                          ) {
+                              Text(
+                                  "شروع مدیریت مالی",
+                                  fontSize = 18.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = Ink
+                              )
+                              Spacer(Modifier.height(8.dp))
+                              Text(
+                                  "درآمدها و هزینه‌هایت را ثبت کن تا گزارش مالی‌ات اینجا نمایش داده شود.",
+                                  textAlign = TextAlign.End,
+                                  color = Muted
+                              )
+                              Spacer(Modifier.height(14.dp))
+                              Button(
+                                  onClick = { selectedTab = 1 },
+                                  modifier = Modifier.fillMaxWidth(),
+                                  shape = RoundedCornerShape(16.dp)
+                              ) {
+                                  Icon(Icons.Default.Add, null)
+                                  Spacer(Modifier.width(8.dp))
+                                  Text("ثبت اولین تراکنش")
+                              }
+                          }
+                      }
+
+                      Spacer(Modifier.height(18.dp))
+                      Text(
+                          "آخرین تراکنش‌ها",
+                          fontSize = 18.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = Ink
+                      )
+                      Spacer(Modifier.height(8.dp))
+                      Surface(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(18.dp),
+                          color = Color.White
+                      ) {
+                          Text(
+                              "هنوز تراکنشی ثبت نشده است",
+                              modifier = Modifier.padding(22.dp),
+                              textAlign = TextAlign.Center,
+                              color = Muted
+                          )
+                      }
+                  }
+              }
+          }
+
+          @Composable
+          private fun SummaryCard(
+              title: String,
+              amount: String,
+              background: Color,
+              amountColor: Color,
+              modifier: Modifier = Modifier
+          ) {
+              Card(
+                  modifier = modifier,
+                  shape = RoundedCornerShape(22.dp),
+                  colors = CardDefaults.cardColors(containerColor = background)
+              ) {
+                  Column(
+                      modifier = Modifier.fillMaxWidth().padding(14.dp),
+                      horizontalAlignment = Alignment.End
+                  ) {
+                      Text(title, fontSize = 12.sp, color = Ink)
+                      Spacer(Modifier.height(8.dp))
+                      Text(amount, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = amountColor)
+                  }
+              }
+          }
+          EOF
+
+          cat > .github/workflows/build-apk.yml <<'EOF'
+          name: Build KharjNegar APK
+
+          on:
+            workflow_dispatch:
+            push:
+              branches: [main, master]
+
+          permissions:
+            contents: read
+
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+
+                - uses: actions/setup-java@v4
+                  with:
+                    distribution: temurin
+                    java-version: "17"
+
+                - uses: gradle/actions/setup-gradle@v4
+                  with:
+                    gradle-version: "8.13"
+
+                - name: Build debug APK
+                  run: gradle assembleDebug
+
+                - uses: actions/upload-artifact@v4
+                  with:
+                    name: kharjnegar-apk
+                    path: app/build/outputs/apk/debug/app-debug.apk
+          EOF
+
+          cat > README.md <<'EOF'
+          # خرج‌نگار | KharjNegar
+
+          اپلیکیشن اندرویدی مدیریت آفلاین هزینه و درآمد.
+
+          - Version: 1.0.0
+          - Application ID: ir.kharjnegar.app
+          - Kotlin + Jetpack Compose
+          - طراحی فارسی و راست‌چین
+
+          برای ساخت APK به بخش Actions بروید و گردش‌کار Build KharjNegar APK را اجرا کنید.
+          EOF
+
+      - name: Commit generated project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Bootstrap KharjNegar Android app"
+          git push
